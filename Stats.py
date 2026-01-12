@@ -15,11 +15,11 @@ p2w_pl2start = 1 - p1w_pl2start
 
 
 # delta_A og delta_D set fra Player 1 
-p1a = 1
+p1a = 0
 p1d = 0
 
 p2a = 0
-p2d = 0
+p2d = 1
 
 # Fordeling for X = d6_a - d6_d
 DIFF_PROBS = {
@@ -46,7 +46,6 @@ def sp1_sp2_from_stats(A1: int, D1: int, A2: int, D2: int):
 
 
 sp1, sp2 = sp1_sp2_from_stats(p1a, p1d, p2a, p2d)
-print(f"sp1: {sp1} \nsp2: {sp2} \n")
 
 # Sandsynligheden for at player 1 vinder kampen, hvis P1 starter
 p1w_pl1start = sp1 / (sp1 + sp2 - (sp1 * sp2))
@@ -56,8 +55,5 @@ p2w_pl1start = 1 - p1w_pl1start
 p1w_pl2start = (sp1 * (1 - sp2)) / (sp1 + sp2 - (sp1 * sp2))
 p2w_pl2start = 1 - p1w_pl2start
 
-print(f"Player 1 starter - og vinder: {p1w_pl1start}")
-print(f"Player 1 starter - og taber: {p2w_pl1start} \n")
-
-print(f"Player 2 starter - og vinder: {p2w_pl2start}")
-print(f"Player 2 starter - og taber: {p1w_pl2start}")
+print(f"Player 1 starter - player 1 vinder: {p1w_pl1start}")
+print(f"Player 2 starter - player 1 vinder: {p1w_pl2start}")

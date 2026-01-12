@@ -1,3 +1,9 @@
+p1a = 9
+p1d = 2
+
+p2a = 2
+p2d = 2
+
 # Sandsynlighed for sejr når P1 angriber = sp1
 # Sandsynlighed for sejr når P2 angriber = sp2
 sp1 = 1/3

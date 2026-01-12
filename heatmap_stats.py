@@ -40,8 +40,8 @@ p2w_pl2start = 1 - p1w_pl2start
 '''
 
 # --- Grid over x = A1-D2 og y = D1-A2 ---
-M_atk_range = range(-5, 6)   # x-akse: A1 - D2
-M_def_range = range(-5, 6)   # y-akse: D1 - A2
+M_atk_range = range(-6, 7)   # x-akse: A1 - D2
+M_def_range = range(-6, 7)   # y-akse: D1 - A2
 x_vals = list(M_atk_range)
 y_vals = list(M_def_range)
 
