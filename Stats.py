@@ -1,31 +1,52 @@
-# delta_A og delta_D set fra Player 1 
-delta_A = 5
-delta_D = -5
+'''
+# Sandsynlighed for sejr når P1 angriber = sp1
+# Sandsynlighed for sejr når P2 angriber = sp2
+sp1 = 1/3
+sp2 = 1/2
 
+# Sandsynligheden for at player 1 vinder kampen, hvis P1 starter
+p1w_pl1start = sp1 / (sp1 + sp2 - (sp1 * sp2))
+p2w_pl1start = 1 - p1w_pl1start
+
+# Sandsynligheden for at player 1 vinder kampen, hvis P2 starter
+p1w_pl2start = (sp1 * (1 - sp2)) / (sp1 + sp2 - (sp1 * sp2))
+p2w_pl2start = 1 - p1w_pl2start
+'''
+
+
+# delta_A og delta_D set fra Player 1 
+p1a = 1
+p1d = 0
+
+p2a = 0
+p2d = 0
+
+# Fordeling for X = d6_a - d6_d
 DIFF_PROBS = {
     -5: 1/36, -4: 2/36, -3: 3/36, -2: 4/36, -1: 5/36,
      0: 6/36,  1: 5/36,  2: 4/36,  3: 3/36,  4: 2/36,  5: 1/36
 }
 
-def p_hit_from_M(M: int) -> float:
+def hit_prob(att_A: int, def_D: int) -> float:
     """
-    P(hit) ved modifikator M = A_att - D_def.
-    Hit når d6_a + A_att > d6_d + D_def  <=>  X = d6_a - d6_d > -M.
+    P(hit) når angriber har attack = att_A og forsvarer defense = def_D.
     """
-    threshold = -M
+    M = att_A - def_D
+    threshold = -M               # vi vil have P(X > threshold)
     return sum(prob for x, prob in DIFF_PROBS.items() if x > threshold)
 
-def sp1_sp2_from_diffs(delta_A: int, delta_D: int):
+def sp1_sp2_from_stats(A1: int, D1: int, A2: int, D2: int):
     """
-    Udregner sp1 og sp2 automatisk ud fra forskellene mellem Attack og Defense
+    sp1 = P(P1 rammer P2 i ét angreb)
+    sp2 = P(P2 rammer P1 i ét angreb)
     """
-    M1 = delta_A
-    M2 = -delta_D
-    sp1 = p_hit_from_M(M1)  # P(P1 rammer P2)
-    sp2 = p_hit_from_M(M2)  # P(P2 rammer P1)
+    sp1 = hit_prob(A1, D2)  # P1 angriber P2
+    sp2 = hit_prob(A2, D1)  # P2 angriber P1
     return sp1, sp2
 
-sp1, sp2 = sp1_sp2_from_diffs(delta_A=delta_A, delta_D=delta_D)
+
+sp1, sp2 = sp1_sp2_from_stats(p1a, p1d, p2a, p2d)
+print(f"sp1: {sp1} \nsp2: {sp2} \n")
 
 # Sandsynligheden for at player 1 vinder kampen, hvis P1 starter
 p1w_pl1start = sp1 / (sp1 + sp2 - (sp1 * sp2))
