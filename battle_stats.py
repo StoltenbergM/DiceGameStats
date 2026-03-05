@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
+import numpy as np
 import math
+
+## Player 1 starter hvis uafjort (P1 angriber)
 
 # ---------- 1. Grund-sandsynligheder ----------
 
@@ -20,7 +23,7 @@ def p_hit(att_A: int, def_D: int) -> float:
     return sum(prob for x, prob in DIFF_PROBS.items() if x > threshold)
 
 
-def p1_duel_win(S1: int, A1: int, D1: int, 
+def duel_p1_win(S1: int, A1: int, D1: int, 
                 S2: int, A2: int, D2: int) -> float:
     """
     Analytisk P(P1 vinder én duel med 1 HP, givet stats og speed-regel:
@@ -52,58 +55,70 @@ def p1_duel_win(S1: int, A1: int, D1: int,
 
 @dataclass
 class Card:
+    spd: int
     atk: int
     df: int
-    spd: int
 
 Team = List[Card]
 
 
-def team_vs_team_simple(team1: Team, team2: Team):
+def team_vs_team_full(team1: Team, team2: Team):
     """
     Returnerer:
-      - liste med P(Team1-kort vinder) for hver position (0 vs 0, 1 vs 1, ...)
-      - gennemsnitlig P(Team1 vinder) over alle dueller
+      - head_to_head: liste med P(Team1 vinder) for position i vs i
+      - avg_head_to_head: gennemsnit af head_to_head
+
+      - all_vs_all: 2D matrix hvor [i][j] = P(team1[i] slår team2[j])
+      - avg_all_vs_all: gennemsnit over alle matchups
     """
-    assert len(team1) == len(team2), "Teams skal have samme størrelse"
+    n1 = len(team1)
+    n2 = len(team2)
 
-    p_duels = []
+    # Head-to-head (position vs position)
+    head_to_head = []
     for c1, c2 in zip(team1, team2):
-        p = p1_duel_win(c1.atk, c1.df, c1.spd,
-                        c2.atk, c2.df, c2.spd)
-        p_duels.append(p)
+        p = duel_p1_win(c1.spd, c1.atk, c1.df,
+                        c2.spd, c2.atk, c2.df)
+        head_to_head.append(p)
+    avg_head_to_head = sum(head_to_head) / len(head_to_head)
 
-    avg_p = sum(p_duels) / len(p_duels)
-    return p_duels, avg_p
+    # All-vs-all
+    all_vs_all = np.zeros((n1, n2))
+    for i, c1 in enumerate(team1):
+        for j, c2 in enumerate(team2):
+            p = duel_p1_win(c1.spd, c1.atk, c1.df,
+                            c2.spd, c2.atk, c2.df)
+            all_vs_all[i, j] = p
+    avg_all_vs_all = np.mean(all_vs_all)
+
+    return head_to_head, avg_head_to_head, all_vs_all, avg_all_vs_all
 
 
 # --- Eksempel ---
 
 if __name__ == "__main__":
     team1 = [
-        Card(1, 0, 0),
-        Card(1, 0, 0),
-        Card(1, 0, 0),
-        Card(1, 0, 0),
-        Card(1, 0, 0),
-        Card(1, 0, 0),
-        Card(1, 0, 0),
+        Card(-1, 0, 1),
+        Card(-1, 0, 2),
+        Card(-1, 0, 3),
+        Card(-1, 0, 4),
     ]
 
     team2 = [
-        Card(0, 0, 2),
-        Card(0, 0, 2),
-        Card(0, 0, 2),
-        Card(0, 0, 2),
-        Card(0, 0, 2),
-        Card(0, 0, 2),
-        Card(0, 0, 2),
+        Card(0, 1, 0),
+        Card(0, 2, 0),
+        Card(0, 3, 0),
+        Card(0, 4, 0),
     ]
 
-    p_duels, avg_p = team_vs_team_simple(team1, team2)
+    h2h, avg_h2h, ava, avg_ava = team_vs_team_full(team1, team2)
 
-    print("P(Team1 vinder hver duel):")
-    for i, p in enumerate(p_duels, start=1):
-        print(f"  Duel {i}: {p:.3f}")
+    print("=== Head-to-head (position vs position) ===")
+    for i, p in enumerate(h2h):
+        print(f"  Duel {i+1}: {p:.3f}")
+    print(f"  Gennemsnit: {avg_h2h:.3f}")
 
-    print("\nGennemsnitlig P(Team1 vinder en duel):", avg_p)
+    print("\n=== All-vs-all matrix ===")
+    print("  (rækker = Team1 kort, kolonner = Team2 kort)")
+    print(np.round(ava, 3))
+    print(f"  Gennemsnit: {avg_ava:.3f}")

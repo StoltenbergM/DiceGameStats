@@ -16,10 +16,6 @@ def p_hit_from_M(M: int) -> float:
     threshold = -M
     return sum(prob for x, prob in DIFF_PROBS.items() if x > threshold)
 
-def p_hit_from_M(M: int) -> float:
-    threshold = -M
-    return sum(prob for x, prob in DIFF_PROBS.items() if x > threshold)
-
 def p1_win_given_sp(sp1: float, sp2: float, starter: str = "p1") -> float:
     denom = sp1 + sp2 - sp1 * sp2
     if denom == 0:
