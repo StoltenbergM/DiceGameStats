@@ -98,17 +98,23 @@ def team_vs_team_full(team1: Team, team2: Team):
 
 if __name__ == "__main__":
     team1 = [
-        Card(-1, 0, 1),
-        Card(-1, 0, 2),
-        Card(-1, 0, 3),
-        Card(-1, 0, 4),
+        Card(0, 1, 4),
+        Card(1, 1, 1),
+        Card(4, 3, 2),
+        Card(6, 4, 3),
+        Card(4, 6, 6),
+        Card(6, 7, 6),
+        Card(6, 8, 8),
     ]
 
     team2 = [
-        Card(0, 1, 0),
-        Card(0, 2, 0),
-        Card(0, 3, 0),
-        Card(0, 4, 0),
+        Card(3, 1, 1),
+        Card(2, 3, 2),
+        Card(3, 4, 3),
+        Card(7, 4, 2),
+        Card(5, 6, 5),
+        Card(8, 6, 4),
+        Card(9, 8, 6),
     ]
 
     h2h, avg_h2h, ava, avg_ava = team_vs_team_full(team1, team2)
