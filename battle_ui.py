@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib
 
 #This script should be run in the terminal - not normal RUN
-
 # In termianl: streamlit run battle_ui.py
 
 from battle_stats import Card, team_vs_team_full
@@ -12,151 +12,226 @@ st.set_page_config(layout="wide")
 
 st.title("Card Battle Simulator")
 
-# ----------------------------
-# Card Input
-# ----------------------------
+# -----------------------------
+# Initialize teams
+# -----------------------------
 
-st.sidebar.header("Team Setup")
+if "teams" not in st.session_state:
 
-def create_team_input(team_name, default_cards):
+    st.session_state.teams = {
 
-    st.sidebar.subheader(team_name)
+        "Jungle":[
+            {"name":"Hexloth","spd":0,"atk":1,"df":4},
+            {"name":"Toxylis","spd":1,"atk":1,"df":1},
+            {"name":"Thymur","spd":4,"atk":3,"df":2},
+            {"name":"Pantrix","spd":6,"atk":4,"df":3},
+            {"name":"Gorvath","spd":4,"atk":6,"df":6},
+            {"name":"Tigravos","spd":6,"atk":7,"df":6},
+            {"name":"Zytherion","spd":6,"atk":8,"df":8},
+        ],
 
-    cards = []
+        "Lumar":[
+            {"name":"Elyra","spd":3,"atk":1,"df":1},
+            {"name":"Lumina","spd":2,"atk":3,"df":2},
+            {"name":"Fenriva","spd":3,"atk":4,"df":3},
+            {"name":"Pegasus","spd":7,"atk":4,"df":2},
+            {"name":"Griffax","spd":5,"atk":6,"df":5},
+            {"name":"Skyradrake","spd":8,"atk":6,"df":4},
+            {"name":"Seraph","spd":9,"atk":8,"df":6},
+        ],
 
-    for i, card in enumerate(default_cards):
-
-        cols = st.sidebar.columns(4)
-
-        name = cols[0].text_input(
-            f"{team_name} Card {i+1} Name",
-            value=card["name"],
-            key=f"{team_name}_name_{i}"
-        )
-
-        spd = cols[1].number_input(
-            "SPD",
-            value=card["spd"],
-            key=f"{team_name}_spd_{i}"
-        )
-
-        atk = cols[2].number_input(
-            "ATK",
-            value=card["atk"],
-            key=f"{team_name}_atk_{i}"
-        )
-
-        df = cols[3].number_input(
-            "DEF",
-            value=card["df"],
-            key=f"{team_name}_df_{i}"
-        )
-
-        cards.append({"name": name, "spd": spd, "atk": atk, "df": df})
-
-    return cards
+        "Greenhallow":[
+            {"name":"H","spd":2,"atk":1,"df":1},
+            {"name":"L","spd":4,"atk":2,"df":1},
+            {"name":"3","spd":4,"atk":4,"df":3},
+            {"name":"4","spd":2,"atk":4,"df":6},
+            {"name":"5","spd":4,"atk":6,"df":6},
+            {"name":"6","spd":7,"atk":7,"df":5},
+            {"name":"7","spd":6,"atk":9,"df":8},
+        ]
+    }
 
 
-# Default cards
-team1_defaults = [
-    {"name":"T1-A","spd":0,"atk":1,"df":4},
-    {"name":"T1-B","spd":1,"atk":1,"df":1},
-    {"name":"T1-C","spd":4,"atk":3,"df":2},
-    {"name":"T1-D","spd":6,"atk":4,"df":3},
-    {"name":"T1-E","spd":4,"atk":6,"df":6},
-    {"name":"T1-F","spd":6,"atk":7,"df":6},
-    {"name":"T1-G","spd":6,"atk":8,"df":8},
-]
+# -----------------------------
+# Helper functions
+# -----------------------------
 
-team2_defaults = [
-    {"name":"T2-A","spd":3,"atk":1,"df":1},
-    {"name":"T2-B","spd":2,"atk":3,"df":2},
-    {"name":"T2-C","spd":3,"atk":4,"df":3},
-    {"name":"T2-D","spd":7,"atk":4,"df":2},
-    {"name":"T2-E","spd":5,"atk":6,"df":5},
-    {"name":"T2-F","spd":8,"atk":6,"df":4},
-    {"name":"T2-G","spd":9,"atk":8,"df":6},
-]
-
-team1_cards = create_team_input("Team 1", team1_defaults)
-team2_cards = create_team_input("Team 2", team2_defaults)
-
-# ----------------------------
-# Buff Controls
-# ----------------------------
-
-st.sidebar.header("Team Buffs")
-
-buff1_spd = st.sidebar.number_input("Team1 SPD Buff", value=0)
-buff1_atk = st.sidebar.number_input("Team1 ATK Buff", value=0)
-buff1_df  = st.sidebar.number_input("Team1 DEF Buff", value=0)
-
-buff2_spd = st.sidebar.number_input("Team2 SPD Buff", value=0)
-buff2_atk = st.sidebar.number_input("Team2 ATK Buff", value=0)
-buff2_df  = st.sidebar.number_input("Team2 DEF Buff", value=0)
-
-# ----------------------------
-# Build Card Objects
-# ----------------------------
-
-def apply_buff(cards, spd, atk, df):
+def convert(cards):
 
     return [
-        Card(
-            c["spd"] + spd,
-            c["atk"] + atk,
-            c["df"] + df
-        )
+        Card(c["spd"], c["atk"], c["df"])
         for c in cards
     ]
 
-team1 = apply_buff(team1_cards, buff1_spd, buff1_atk, buff1_df)
-team2 = apply_buff(team2_cards, buff2_spd, buff2_atk, buff2_df)
 
-# ----------------------------
-# Run Battles
-# ----------------------------
+def matchup_avg(team1, team2):
 
-h2h_1, avg_h2h_1, ava_1, avg_ava_1 = team_vs_team_full(team1, team2)
-h2h_2, avg_h2h_2, ava_2, avg_ava_2 = team_vs_team_full(team2, team1)
+    h2h1, _, ava1, avg1 = team_vs_team_full(team1, team2)
+    h2h2, _, ava2, avg2 = team_vs_team_full(team2, team1)
 
-# flip second matrix perspective
-ava_2 = 1 - ava_2.T
+    ava2 = 1 - ava2.T
 
-# average
-h2h_avg = [(a + (1-b)) / 2 for a, b in zip(h2h_1, h2h_2)]
-ava_avg = (ava_1 + ava_2) / 2
+    avg_matrix = (ava1 + ava2) / 2
 
-avg_h2h = np.mean(h2h_avg)
-avg_ava = np.mean(ava_avg)
+    avg = np.mean(avg_matrix)
 
-names1 = [c["name"] for c in team1_cards]
-names2 = [c["name"] for c in team2_cards]
+    return avg_matrix, avg
 
-# ----------------------------
-# Display Results
-# ----------------------------
 
-st.header("Head-to-Head")
+# -----------------------------
+# Layout
+# -----------------------------
 
-h2h_df = pd.DataFrame({
-    "Team1 Card": names1,
-    "Team2 Card": names2,
-    "Win Prob Team1": h2h_avg
-})
+left, right = st.columns([1,1])
 
-st.dataframe(h2h_df)
+# =========================================================
+# LEFT SIDE — TEAM + CARD EDITOR
+# =========================================================
 
-st.metric("Average Head-to-Head", round(avg_h2h,3))
+with left:
 
-st.header("All vs All Matrix")
+    st.header("Team Editor")
 
-matrix_df = pd.DataFrame(
-    ava_avg,
-    index=names1,
-    columns=names2
+    team_names = list(st.session_state.teams.keys())
+
+    new_team = st.text_input("New Team Name")
+
+    if st.button("Create Team"):
+
+        if new_team != "":
+            st.session_state.teams[new_team] = []
+
+    selected_team = st.selectbox(
+        "Edit Team",
+        team_names
+    )
+
+    cards = st.session_state.teams[selected_team]
+
+    if st.button("Add Card"):
+
+        cards.append({
+            "name":"New Card",
+            "spd":1,
+            "atk":1,
+            "df":1
+        })
+
+    for i, card in enumerate(cards):
+
+        col1,col2,col3,col4 = st.columns(4)
+
+        card["name"] = col1.text_input(
+            "Name",
+            card["name"],
+            key=f"{selected_team}_name_{i}"
+        )
+
+        card["spd"] = col2.number_input(
+            "SPD",
+            value=card["spd"],
+            key=f"{selected_team}_spd_{i}"
+        )
+
+        card["atk"] = col3.number_input(
+            "ATK",
+            value=card["atk"],
+            key=f"{selected_team}_atk_{i}"
+        )
+
+        card["df"] = col4.number_input(
+            "DEF",
+            value=card["df"],
+            key=f"{selected_team}_df_{i}"
+        )
+
+
+# =========================================================
+# RIGHT SIDE — MATCHUP
+# =========================================================
+
+with right:
+
+    st.header("Team Matchup")
+
+    team_names = list(st.session_state.teams.keys())
+
+    team1_name = st.selectbox(
+        "Team 1",
+        team_names
+    )
+
+    team2_name = st.selectbox(
+        "Team 2",
+        [t for t in team_names if t != team1_name]
+    )
+
+    team1 = convert(st.session_state.teams[team1_name])
+    team2 = convert(st.session_state.teams[team2_name])
+
+    h2h, avg_h2h, ava, avg_ava = team_vs_team_full(team1, team2)
+
+    names1 = [c["name"] for c in st.session_state.teams[team1_name]]
+    names2 = [c["name"] for c in st.session_state.teams[team2_name]]
+
+    st.subheader("Head to Head")
+
+    h2h_df = pd.DataFrame({
+        team1_name:names1,
+        team2_name:names2,
+        "Win %":h2h
+    })
+
+    st.dataframe(h2h_df)
+
+    st.metric("Average", round(avg_h2h,3))
+
+    st.subheader("All vs All")
+
+    matrix_df = pd.DataFrame(
+        ava,
+        index=names1,
+        columns=names2
+    )
+
+    st.dataframe(
+        matrix_df.style.background_gradient(cmap="RdYlGn")
+    )
+
+    st.metric("Average", round(avg_ava,3))
+
+
+# =========================================================
+# FULL FACTION BALANCE DASHBOARD
+# =========================================================
+
+st.header("Faction Balance Dashboard")
+
+teams = list(st.session_state.teams.keys())
+
+results = np.zeros((len(teams), len(teams)))
+
+for i,t1 in enumerate(teams):
+
+    for j,t2 in enumerate(teams):
+
+        if i == j:
+            continue
+
+        team1 = convert(st.session_state.teams[t1])
+        team2 = convert(st.session_state.teams[t2])
+
+        _,avg = matchup_avg(team1,team2)
+
+        results[i,j] = avg
+
+
+balance_df = pd.DataFrame(
+    results,
+    index=teams,
+    columns=teams
 )
 
-st.dataframe(matrix_df)
-
-st.metric("Average All vs All", round(avg_ava,3))
+st.dataframe(
+    balance_df.style.background_gradient(cmap="RdYlGn")
+)
